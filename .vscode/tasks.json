@@ -1,0 +1,27 @@
+{
+    "tasks": [
+        {
+            "type": "shell",
+            "label": "clang++ build command-du",
+            "command": "clang++",
+            "args": [
+                "-std=c++17",
+                "-fexceptions",
+                "--include-directory",
+                "shared",
+                "-g",
+                "command/main.cpp",
+                "-o",
+                "out/du"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "problemMatcher": [
+                "$gcc"
+            ],
+            "group": "build"
+        },
+    ],
+    "version": "2.0.0"
+}
