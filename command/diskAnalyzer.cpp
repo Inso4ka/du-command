@@ -62,12 +62,17 @@ void DiskAnalyzer::processDirectory(const std::filesystem::path& directoryPath, 
             }
             std::uintmax_t directoryBlocks = (directorySize + 511) / 512;
             totalBlocks += directoryBlocks;
+
+            if (directoryBlocks == 0) {
+                totalBlocks += 1;
+            }
+
             if (m_condition.showData) {
                 std::string sizeInfo;
                 if (m_condition.bytes) {
                     sizeInfo = std::to_string(directorySize) + "\t";
                 } else {
-                    sizeInfo = std::to_string(directoryBlocks) + "\t";
+                    sizeInfo = std::to_string(totalBlocks) + "\t";
                 }
                 LOG_INFO(sizeInfo + directoryPath.string());
             }
@@ -76,6 +81,7 @@ void DiskAnalyzer::processDirectory(const std::filesystem::path& directoryPath, 
         LOG_ERROR("Error 2 ", e.what());
     }
 }
+
 
 
 void DiskAnalyzer::processDirectoryWithAllContent(const std::filesystem::path& directoryPath, std::uintmax_t& totalBlocks)
