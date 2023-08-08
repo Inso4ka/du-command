@@ -1,6 +1,7 @@
 #include <iostream>
 #include <filesystem>
 #include "../shared/log.hpp"
+#include <fstream>
 
 class DiskAnalyzer
 {
@@ -11,7 +12,12 @@ class DiskAnalyzer
     {
         std::uintmax_t totalBlocks = 0;
         if (std::filesystem::is_directory(m_rootPath)) {
-            processDirectory(m_rootPath, totalBlocks);
+            if (std::filesystem::is_empty(m_rootPath)) {
+                totalBlocks += 1;
+                LOG_INFO(std::to_string(totalBlocks) + "\t" + m_rootPath.string());
+            } else {
+                processDirectory(m_rootPath, totalBlocks);
+            }
         } else {
             processFile(m_rootPath, totalBlocks);
         }
@@ -83,43 +89,72 @@ class DiskAnalyzer
     flags flag;
 };
 
-std::string buildCommand(int argc, char** argv, bool& size, bool& showData, bool& bytes)
-{
+std::vector<std::filesystem::path> readPathsFromFile(const std::string& filePath) {
+    std::vector<std::filesystem::path> paths;
+    std::ifstream file(filePath);
+
+    if (!file) {
+        LOG_CRITICAL("File error");
+    } else {
+        std::string line;
+        while (std::getline(file, line)) {
+            paths.emplace_back(line);
+        }
+
+        file.close();
+    }
+
+    return paths;
+}
+
+std::string buildCommand(int argc, char** argv, bool& size, bool& showData, bool& bytes, bool& list) {
     if (argc == 2) {
-        return std::string(argv[1]);
+        return argv[1];
     } else if (argc == 3) {
         std::string option(argv[1]);
         if (option == "-b") {
             bytes = true;
-            return std::string(argv[2]);
-
+            return argv[2];
+        } else if (option == "--files") {
+            list = true;
+            return argv[2];
         } else if (option == "-s") {
             showData = false;
-            size     = true;
-            return std::string(argv[2]);
+            size = true;
+            return argv[2];
         } else if (option == "-c") {
             size = true;
-            return std::string(argv[2]);
+            return argv[2];
         }
     }
     return "";
 }
 
-int main(int argc, char** argv)
-{
-    bool size     = false;
+int main(int argc, char** argv) {
+    bool size = false;
     bool showData = true;
-    bool bytes    = false;
+    bool bytes = false;
+    bool list = false;
 
-    std::string command = buildCommand(argc, argv, size, showData, bytes);
+    std::string command = buildCommand(argc, argv, size, showData, bytes, list);
     if (command.empty()) {
         LOG_CRITICAL("Usage: du [-m|-g|-s|-b] <path>");
         return 1;
     }
 
-    DiskAnalyzer analyzer(command);
-    analyzer.setFlags(size, showData, bytes);
-    analyzer.analyze();
+    if (list) {
+        std::vector<std::filesystem::path> paths = readPathsFromFile(command);
+        for (const auto& path : paths) {
+            DiskAnalyzer analyzer(path);
+            analyzer.setFlags(size, showData, bytes);
+            analyzer.analyze();
+        }
+    } else {
+        DiskAnalyzer analyzer(command);
+        analyzer.setFlags(size, showData, bytes);
+        analyzer.analyze();
+    }
 
     return 0;
 }
+
