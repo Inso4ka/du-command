@@ -10,7 +10,11 @@ void DiskAnalyzer::analyze()
             totalBlocks += 1;
             LOG_INFO(std::to_string(totalBlocks) + "\t" + m_rootPath.string());
         } else {
-            processDirectory(m_rootPath, totalBlocks);
+            if (m_condition.showAll) {
+                processDirectoryWithAllContent(m_rootPath, totalBlocks);
+            } else {
+                processDirectory(m_rootPath, totalBlocks);
+            }
         }
     } else {
         processFile(m_rootPath, totalBlocks);
@@ -45,16 +49,47 @@ void DiskAnalyzer::processDirectory(const std::filesystem::path& directoryPath, 
         if (std::filesystem::is_empty(directoryPath)) {
             totalBlocks += 1;
         } else {
+            std::uintmax_t directorySize = 0;
             for (const auto& entry : std::filesystem::directory_iterator(directoryPath)) {
                 if (entry.is_directory()) {
-                    processDirectory(entry.path(), totalBlocks);
+                    std::uintmax_t subdirectorySize = 0;
+                    processDirectory(entry.path(), subdirectorySize);
+                    totalBlocks += subdirectorySize;
+                    directorySize += subdirectorySize;
                 } else {
-                    processFile(entry.path(), totalBlocks);
+                    directorySize += entry.file_size();
                 }
+            }
+            std::uintmax_t directoryBlocks = (directorySize + 511) / 512;
+            totalBlocks += directoryBlocks;
+            if (m_condition.showData) {
+                std::string sizeInfo;
+                if (m_condition.bytes) {
+                    sizeInfo = std::to_string(directorySize) + "\t";
+                } else {
+                    sizeInfo = std::to_string(directoryBlocks) + "\t";
+                }
+                LOG_INFO(sizeInfo + directoryPath.string());
             }
         }
     } catch (const std::filesystem::filesystem_error& e) {
         LOG_ERROR("Error 2 ", e.what());
+    }
+}
+
+
+void DiskAnalyzer::processDirectoryWithAllContent(const std::filesystem::path& directoryPath, std::uintmax_t& totalBlocks)
+{
+    try {
+        for (const auto& entry : std::filesystem::recursive_directory_iterator(directoryPath)) {
+            if (entry.is_directory()) {
+                totalBlocks += 1;
+            } else {
+                processFile(entry.path(), totalBlocks);
+            }
+        }
+    } catch (const std::filesystem::filesystem_error& e) {
+        LOG_ERROR("Error 3 ", e.what());
     }
 }
 
@@ -98,6 +133,8 @@ std::string buildCommand(int argc, char** argv, conditions& condition)
             condition.size     = true;
         } else if (option == "-c") {
             condition.size = true;
+        } else if (option == "-a") {
+            condition.showAll = true;
         }
         return argv[2];
     }
