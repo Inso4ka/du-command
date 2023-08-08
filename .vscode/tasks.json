@@ -10,6 +10,7 @@
                 "--include-directory",
                 "shared",
                 "-g",
+                "command/diskAnalyzer.cpp",
                 "command/main.cpp",
                 "-o",
                 "out/du"
