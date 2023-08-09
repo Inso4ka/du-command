@@ -59,8 +59,7 @@ void DiskAnalyzer::processDirectory(const std::filesystem::path& directoryPath, 
         }
 
         totalSize += directorySize;
-        std::uintmax_t directoryBlocks = (directorySize + 511) / 512;
-        totalBlocks += directoryBlocks;
+        totalBlocks += (directorySize + 511) / 512;
 
         if (m_condition.showData) {
             std::string sizeInfo;
