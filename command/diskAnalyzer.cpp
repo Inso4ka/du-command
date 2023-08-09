@@ -50,7 +50,6 @@ void DiskAnalyzer::processDirectory(const std::filesystem::path& directoryPath, 
                 if (entry.is_directory()) {
                     std::uintmax_t subdirectoryBlocks = 0;
                     std::uintmax_t subdirectorySize   = 0;
-
                     processDirectory(entry.path(), subdirectoryBlocks, subdirectorySize);
                     directorySize += subdirectorySize;
                 } else {
@@ -66,7 +65,7 @@ void DiskAnalyzer::processDirectory(const std::filesystem::path& directoryPath, 
         if (m_condition.showData) {
             std::string sizeInfo;
             if (m_condition.bytes) {
-                sizeInfo = std::to_string(directorySize) + "\t";
+                sizeInfo = std::to_string(totalSize) + "\t";
             } else {
                 sizeInfo = std::to_string(totalBlocks) + "\t";
             }
@@ -80,15 +79,19 @@ void DiskAnalyzer::processDirectory(const std::filesystem::path& directoryPath, 
 void DiskAnalyzer::processDirectoryWithAllContent(const std::filesystem::path& directoryPath, std::uintmax_t& totalBlocks)
 {
     try {
-        for (const auto& entry : std::filesystem::recursive_directory_iterator(directoryPath)) {
-            if (entry.is_directory()) {
-                totalBlocks += 1;
-            } else {
-                processFile(entry.path(), totalBlocks);
+        if (std::filesystem::is_empty(directoryPath)) {
+            totalBlocks += 1;
+        } else {
+            for (const auto& entry : std::filesystem::directory_iterator(directoryPath)) {
+                if (entry.is_directory()) {
+                    processDirectoryWithAllContent(entry.path(), totalBlocks);
+                } else {
+                    processFile(entry.path(), totalBlocks);
+                }
             }
         }
     } catch (const std::filesystem::filesystem_error& e) {
-        LOG_ERROR("Error 3 ", e.what());
+        LOG_ERROR("Error 2 ", e.what());
     }
 }
 
