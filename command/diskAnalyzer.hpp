@@ -22,7 +22,7 @@ class DiskAnalyzer
 
   private:
     void        processFile(const std::filesystem::path& filePath, std::uintmax_t& totalBlocks);
-    void        processDirectory(const std::filesystem::path& directoryPath, std::uintmax_t& totalBlocks);
+    void        processDirectory(const std::filesystem::path& directoryPath, std::uintmax_t& totalBlocks, std::uintmax_t& totalSize);
     std::string getFileSizeInfo(const std::filesystem::path& filePath, const std::uintmax_t size) const;
     void        processDirectoryWithAllContent(const std::filesystem::path& directoryPath, std::uintmax_t& totalBlocks);
 
